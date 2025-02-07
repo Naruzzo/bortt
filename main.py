@@ -3,7 +3,7 @@ import requests
 from telegram import Update, KeyboardButton, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 
-# Bot & API Configuration
+# Bot & API Configuration (Using Your Tokens)
 TELEGRAM_BOT_TOKEN = "7886947654:AAEsdg4jwCBBvvCqbEjZM-ZCCjm6sDPnM9k"
 API_TOKEN = "RDeBNsLgiNb136Rxi4g7T9cL83qix0Js7hds9jOlFOpGS4xZ9aL0xcpl3fkk66TNKnyUccPa7utNNhy2JTTYPMOMBQd2crQQg3L9"
 API_URL = "https://full-media-downloader-pro-zfkrvjl323.vercel.app"
@@ -35,7 +35,7 @@ async def start(update: Update, context: CallbackContext):
 
     await update.message.reply_text(
         "🎥 *Welcome to the Media Downloader Bot!* 🎥\n\n"
-        "✅ YOU MUST JOIN OUR CHANNEL!: [📢 Join Here]({})\n"
+        "✅ *REQUIRED!:* Join our channel to proceed: [📢 Join Here]({})\n"
         "👇 *Tap a button to continue:*".format(CHANNEL_INVITE_LINK),
         reply_markup=reply_markup,
         parse_mode="Markdown",
@@ -44,11 +44,10 @@ async def start(update: Update, context: CallbackContext):
 
 async def platform_selected(update: Update, context: CallbackContext):
     """Handle platform selection from keyboard."""
-    platform = update.message.text
+    platform = update.message.text.strip()
 
     if platform not in PLATFORMS:
-        await update.message.reply_text("⚠️ *Invalid selection.* Please choose a platform from the keyboard.")
-        return
+        return  # Ignore the message if it's not a valid platform
 
     context.user_data["platform"] = platform
     await update.message.reply_text(f"📥 *You selected:* {platform}\n\nNow, send the media link.", parse_mode="Markdown")
@@ -56,11 +55,10 @@ async def platform_selected(update: Update, context: CallbackContext):
 async def download_media(update: Update, context: CallbackContext):
     """Download media from the selected platform."""
     if "platform" not in context.user_data:
-        await update.message.reply_text("⚠️ *Please select a platform first using /start.*", parse_mode="Markdown")
-        return
+        return  # Ignore the message if the platform isn't selected
 
     platform = context.user_data["platform"]
-    url = update.message.text
+    url = update.message.text.strip()
 
     params = {"url": url, "token": API_TOKEN}
     response = requests.get(f"{API_URL}/{PLATFORMS[platform]}", params=params)
@@ -87,7 +85,7 @@ def main():
     app = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, platform_selected))
+    app.add_handler(MessageHandler(filters.TEXT & filters.Regex("|".join(PLATFORMS.keys())), platform_selected))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, download_media))
 
     logger.info("Bot is running...")
