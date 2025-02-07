@@ -18,14 +18,14 @@ logger = logging.getLogger(__name__)
 
 # Available social media platforms
 PLATFORMS = {
-    "Instagram": "instagramdownloader1",
-    "TikTok": "tiktokdownloader",
-    "Facebook": "facebookdownloader1",
-    "Twitter": "twitterdownloader",
-    "Pinterest": "pinterestdownloader1",
-    "Snapchat": "snapchatdownloader",
-    "Threads": "threadsdownloader",
-    "Likee": "likeedownloader"
+    "📸 Instagram": "instagramdownloader1",
+    "🎵 TikTok": "tiktokdownloader",
+    "📘 Facebook": "facebookdownloader1",
+    "🐦 Twitter": "twitterdownloader",
+    "📌 Pinterest": "pinterestdownloader1",
+    "👻 Snapchat": "snapchatdownloader",
+    "🧵 Threads": "threadsdownloader",
+    "❤️ Likee": "likeedownloader"
 }
 
 # Store verified users
@@ -36,25 +36,29 @@ async def start(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
 
     if user_id not in verified_users:
-        keyboard = [[InlineKeyboardButton("Join Channel", url=CHANNEL_INVITE_LINK)],
-                    [InlineKeyboardButton("✅ Verify Membership", callback_data="verify")]]
+        keyboard = [
+            [InlineKeyboardButton("📢 Join Channel", url=CHANNEL_INVITE_LINK)],
+            [InlineKeyboardButton("✅ Verify Membership", callback_data="verify")]
+        ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await update.message.reply_text(
-            "🚨 You must join our private channel before using the bot! 🚨\n\n"
+            "🚨 *You must join our private channel before using the bot!* 🚨\n\n"
             "👉 Click the **Join Channel** button, then press **Verify Membership**.",
-            reply_markup=reply_markup
+            reply_markup=reply_markup,
+            parse_mode="Markdown"
         )
         return
 
+    # Inline keyboard for selecting a platform
     keyboard = [[InlineKeyboardButton(name, callback_data=name)] for name in PLATFORMS.keys()]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("Select a platform to download media:", reply_markup=reply_markup)
+    await update.message.reply_text("🎥 *Select a platform to download media:*", reply_markup=reply_markup, parse_mode="Markdown")
 
 async def verify_membership(update: Update, context: CallbackContext):
     """Verify user manually."""
     user_id = update.callback_query.from_user.id
     verified_users.add(user_id)  # Mark user as verified
-    await update.callback_query.message.reply_text("✅ Verification successful! You can now use the bot. Send /start.")
+    await update.callback_query.message.edit_text("✅ *Verification successful!* You can now use the bot. Send /start.", parse_mode="Markdown")
 
 async def button_handler(update: Update, context: CallbackContext):
     """Handle platform selection."""
@@ -67,7 +71,7 @@ async def button_handler(update: Update, context: CallbackContext):
     query = update.callback_query
     await query.answer()
     context.user_data["platform"] = query.data
-    await query.message.reply_text("Now, send the media link.")
+    await query.message.edit_text(f"📥 *You selected:* {query.data}\n\nNow, send the media link.", parse_mode="Markdown")
 
 async def download_media(update: Update, context: CallbackContext):
     """Download media from the selected platform."""
@@ -78,7 +82,7 @@ async def download_media(update: Update, context: CallbackContext):
         return
 
     if "platform" not in context.user_data:
-        await update.message.reply_text("Please select a platform first using /start.")
+        await update.message.reply_text("⚠️ *Please select a platform first using /start.*", parse_mode="Markdown")
         return
 
     platform = context.user_data["platform"]
