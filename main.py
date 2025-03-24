@@ -4,7 +4,7 @@ from telegram import Update, KeyboardButton, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 
 # Bot & API Configuration (Using Your Tokens)
-TELEGRAM_BOT_TOKEN = "7886947654:AAEsdg4jwCBBvvCqbEjZM-ZCCjm6sDPnM9k"
+TELEGRAM_BOT_TOKEN = "7614473367:AAFUWjK8H0ibnzAl63Lz30CAMPVGT9Ew0kg"
 API_TOKEN = "RDeBNsLgiNb136Rxi4g7T9cL83qix0Js7hds9jOlFOpGS4xZ9aL0xcpl3fkk66TNKnyUccPa7utNNhy2JTTYPMOMBQd2crQQg3L9"
 API_URL = "https://full-media-downloader-pro-zfkrvjl323.vercel.app"
 CHANNEL_INVITE_LINK = "https://t.me/Glavniga_suratlar_RASMIY"  # Public channel link
