@@ -7,7 +7,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 # Bot & API Configuration (Using tokens from first code)
 TELEGRAM_BOT_TOKEN = "7614473367:AAFUWjK8H0ibnzAl63Lz30CAMPVGT9Ew0kg"
 API_TOKEN = "RDeBNsLgiNb136Rxi4g7T9cL83qix0Js7hds9jOlFOpGS4xZ9aL0xcpl3fkk66TNKnyUccPa7utNNhy2JTTYPMOMBQd2crQQg3L9"
-API_URL = "https://full-media-downloader-pro-zfkrvjl323.vercel.app"
+API_URL = "https://full-media-downloader-pro-zfkrvjl323.onrender.com"
 
 # Enable Logging
 logging.basicConfig(
