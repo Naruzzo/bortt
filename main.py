@@ -37,6 +37,7 @@ def detect_platform(url: str) -> str:
 
 async def start(update: Update, context: CallbackContext):
     """Start command handler."""
+    await update.message.reply_text("🎥 *Send a media link, and I'll download it!*", parse_mode="Markdown")
 
 async def download_media(update: Update, context: CallbackContext):
     """Detect platform and download media."""
@@ -137,26 +138,22 @@ async def download_media(update: Update, context: CallbackContext):
         logger.info(f"Is video: {is_video}")
         
         if media_url:
-            title = data.get("title", "Downloaded Media")
-            uploader = data.get("uploader", "Unknown")
-            
-            caption = f"📥 *{title}*\n👤 By: {uploader}\n🔗 Source: {platform.replace('downloader', '').replace('downloader1', '').replace('downloader2', '')}"
-            
+            # Send media without any caption
             try:
                 if is_video:
-                    await update.message.reply_video(media_url, caption=caption, parse_mode="Markdown")
+                    await update.message.reply_video(media_url)
                 else:
-                    await update.message.reply_photo(media_url, caption=caption, parse_mode="Markdown")
+                    await update.message.reply_photo(media_url)
                 return
             except Exception as e:
                 logger.error(f"Error sending media: {e}")
                 # Fallback: try to send as document if media sending fails
                 try:
-                    await update.message.reply_document(media_url, caption=caption, parse_mode="Markdown")
+                    await update.message.reply_document(media_url)
                     return
                 except Exception as doc_e:
                     logger.error(f"Error sending document: {doc_e}")
-                    await update.message.reply_text(f"❌ Couldn't send media. URL: {media_url}")
+                    await update.message.reply_text("❌ Couldn't send media. Try again later.")
                     return
         
         await update.message.reply_text("❌ No media found in the response. Try another link.")
@@ -165,7 +162,7 @@ async def download_media(update: Update, context: CallbackContext):
         await update.message.reply_text("❌ Network error. Try again later.")
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
-        await update.message.reply_text(f"❌ An unexpected error occurred: {str(e)[:100]}. Try again later.")
+        await update.message.reply_text("❌ An unexpected error occurred. Try again later.")
 
 def main():
     """Run the bot."""
