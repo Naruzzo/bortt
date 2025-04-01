@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 # Platform-specific URL patterns
 PLATFORM_PATTERNS = {
-    "instagramdownloader1": r"instagram\.com",
+    "instagramdownloader2": r"instagram\.com",
     "tiktokdownloader": r"tiktok\.com",
     "facebookdownloader1": r"facebook\.com",
     "twitterdownloader": r"twitter\.com",
