@@ -37,7 +37,6 @@ def detect_platform(url: str) -> str:
 
 async def start(update: Update, context: CallbackContext):
     """Start command handler."""
-    await update.message.reply_text("🎥 *Send a media link, and I'll download it!*", parse_mode="Markdown")
 
 async def download_media(update: Update, context: CallbackContext):
     """Detect platform and download media."""
