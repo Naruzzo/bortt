@@ -4,7 +4,7 @@ import re
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 
-# Bot & API Configuration (Using tokens from first code)
+# Bot & API Configuration
 TELEGRAM_BOT_TOKEN = "7614473367:AAFUWjK8H0ibnzAl63Lz30CAMPVGT9Ew0kg"
 API_TOKEN = "QXowf53aI7b9KvLQuBqFsBtdhidooix12QRRbkwsZLuqyYnFVqQ80qWW7bMT8UULEL5lWzcLGCaIDbboGNjrOSfweAhqF6Y8LKmp"
 API_URL = "https://full-media-downloader-pro-zfkrvjl323.onrender.com"
@@ -40,6 +40,8 @@ async def start(update: Update, context: CallbackContext):
 
 async def download_media(update: Update, context: CallbackContext):
     """Detect platform and download media."""
+    await update.message.reply_text("⏳ Processing your request...")
+    
     url = update.message.text.strip()
     platform = detect_platform(url)
     
@@ -48,24 +50,122 @@ async def download_media(update: Update, context: CallbackContext):
         return
     
     params = {"url": url, "token": API_TOKEN}
-    response = requests.get(f"{API_URL}/{platform}", params=params)
-    
     try:
-        data = response.json()
-        logger.info(f"API Response: {data}")  # Debugging
+        response = requests.get(f"{API_URL}/{platform}", params=params)
+        logger.info(f"API Status Code: {response.status_code}")
+
+        if response.status_code != 200:
+            logger.error(f"API returned error: {response.status_code} - {response.text}")
+            await update.message.reply_text("❌ API error. Try again later.")
+            return
+
+        try:
+            data = response.json()
+            logger.info(f"API Response keys: {list(data.keys())}")
+        except requests.exceptions.JSONDecodeError:
+            logger.error(f"Invalid JSON response: {response.text}")
+            await update.message.reply_text("❌ Failed to parse API response. Try again later.")
+            return
+
+        # Prioritize finding the actual video instead of thumbnails
+        media_url = None
+        is_video = True
         
-        if isinstance(data, dict):
-            video_url = data.get("url")
-            content_type = data.get("type", "").lower()
+        # Check direct methods first (most likely to be actual video)
+        if "media" in data and isinstance(data["media"], list) and data["media"]:
+            for media_item in data["media"]:
+                if isinstance(media_item, dict) and "url" in media_item:
+                    media_url = media_item["url"]
+                    break
+        
+        # Look for dedicated video URL (common format)
+        if not media_url and "video_url" in data:
+            media_url = data["video_url"]
+        
+        # Check for download URL (another common format)
+        if not media_url and "download_url" in data:
+            media_url = data["download_url"]
             
-            if video_url and "video" in content_type:
-                await update.message.reply_video(video_url)
-                return
+        # Check direct URL field
+        if not media_url and "url" in data:
+            media_url = data["url"]
         
-        await update.message.reply_text("❌ No video found. Try another link.")
+        # Check formats array if available
+        if not media_url and "formats" in data and isinstance(data["formats"], list) and data["formats"]:
+            # Try to find video formats, prioritizing by quality
+            formats = sorted(
+                [f for f in data["formats"] if "url" in f],
+                key=lambda x: int(x.get("height", 0) or 0) * int(x.get("width", 0) or 0),
+                reverse=True
+            )
+            if formats:
+                media_url = formats[0]["url"]
+        
+        # Look for videos array
+        if not media_url and "videos" in data and isinstance(data["videos"], list) and data["videos"]:
+            videos = sorted(
+                [v for v in data["videos"] if "url" in v], 
+                key=lambda x: int(x.get("width", 0) or 0) * int(x.get("height", 0) or 0),
+                reverse=True
+            )
+            if videos:
+                media_url = videos[0]["url"]
+        
+        # Last resort - check for image instead of video
+        if not media_url:
+            is_video = False
+            # Check for image URL (common format)
+            if "image_url" in data:
+                media_url = data["image_url"]
+                
+            # Look in thumbnails as last resort (for images only)
+            elif "thumbnails" in data and isinstance(data["thumbnails"], list) and data["thumbnails"]:
+                thumbnails = sorted(
+                    [t for t in data["thumbnails"] if "url" in t],
+                    key=lambda x: int(x.get("width", 0) or 0) * int(x.get("height", 0) or 0),
+                    reverse=True
+                )
+                if thumbnails:
+                    media_url = thumbnails[0]["url"]
+            
+            # Try thumbnail key directly
+            elif "thumbnail" in data and data["thumbnail"]:
+                media_url = data["thumbnail"]
+        
+        # Debug log to see what URL we found
+        logger.info(f"Selected media URL: {media_url}")
+        logger.info(f"Is video: {is_video}")
+        
+        if media_url:
+            title = data.get("title", "Downloaded Media")
+            uploader = data.get("uploader", "Unknown")
+            
+            caption = f"📥 *{title}*\n👤 By: {uploader}\n🔗 Source: {platform.replace('downloader', '').replace('downloader1', '').replace('downloader2', '')}"
+            
+            try:
+                if is_video:
+                    await update.message.reply_video(media_url, caption=caption, parse_mode="Markdown")
+                else:
+                    await update.message.reply_photo(media_url, caption=caption, parse_mode="Markdown")
+                return
+            except Exception as e:
+                logger.error(f"Error sending media: {e}")
+                # Fallback: try to send as document if media sending fails
+                try:
+                    await update.message.reply_document(media_url, caption=caption, parse_mode="Markdown")
+                    return
+                except Exception as doc_e:
+                    logger.error(f"Error sending document: {doc_e}")
+                    await update.message.reply_text(f"❌ Couldn't send media. URL: {media_url}")
+                    return
+        
+        await update.message.reply_text("❌ No media found in the response. Try another link.")
+    except requests.RequestException as e:
+        logger.error(f"Request error: {e}")
+        await update.message.reply_text("❌ Network error. Try again later.")
     except Exception as e:
-        logger.error(f"Error processing API response: {e}")
-        await update.message.reply_text("❌ Failed to fetch media. Try again.")
+        logger.error(f"Unexpected error: {e}")
+        await update.message.reply_text(f"❌ An unexpected error occurred: {str(e)[:100]}. Try again later.")
 
 def main():
     """Run the bot."""
