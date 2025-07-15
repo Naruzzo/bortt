@@ -56,14 +56,19 @@ async def download_media(update: Update, context: CallbackContext):
             if key in data:
                 if key in ["media", "formats", "videos"]:
                     items = data[key]
-                    if isinstance(items, list) and items:
-                        items = sorted(
-                            [i for i in items if "url" in i],
+                    if isinstance(items, list):
+                        # Filter out thumbnail-looking URLs
+                        video_items = [
+                            i for i in items
+                            if "url" in i and not re.search(r"thumb|preview|image", i["url"], re.IGNORECASE)
+                        ]
+                        video_items = sorted(
+                            video_items,
                             key=lambda x: int(x.get("height", 0)) * int(x.get("width", 0)),
                             reverse=True
                         )
-                        if items:
-                            media_url = items[0]["url"]
+                        if video_items:
+                            media_url = video_items[0]["url"]
                             break
                 elif isinstance(data[key], str):
                     media_url = data[key]
