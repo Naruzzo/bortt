@@ -7,7 +7,7 @@ from telegram.ext import Application, MessageHandler, filters, CallbackContext
 # Bot & API Configuration
 TELEGRAM_BOT_TOKEN = "7614473367:AAFUWjK8H0ibnzAl63Lz30CAMPVGT9Ew0kg"
 API_TOKEN = "naPgeLxXnVkIkEkreCXB7IPu5rgI6zyeOcTU8vnztOAaaF58oSO8TH7x8AFYqQvxeBZMeqyosghQOW5mTrx3yn0cTlV5Z7XFUkLQ"
-API_URL = "https://full-media-downloader-pro-zfkrvjl323.onrender.com"
+API_URL = "https://full-media-downloader-pro-zfkrvjl323.vercel.app/"
 
 # Enable Logging
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
