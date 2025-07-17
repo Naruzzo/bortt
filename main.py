@@ -49,48 +49,17 @@ async def download_media(update: Update, context: CallbackContext):
 
         data = response.json()
         media_url = None
-        is_video = True
+        is_video = False
 
-        # Priority check for video URLs
-        for key in ["media", "video_url", "download_url", "url", "formats", "videos"]:
-            if key in data:
-                if key in ["media", "formats", "videos"]:
-                    items = data[key]
-                    if isinstance(items, list):
-                        # Filter out thumbnail-looking URLs
-                        video_items = [
-                            i for i in items
-                            if "url" in i and not re.search(r"thumb|preview|image", i["url"], re.IGNORECASE)
-                        ]
-                        video_items = sorted(
-                            video_items,
-                            key=lambda x: int(x.get("height", 0)) * int(x.get("width", 0)),
-                            reverse=True
-                        )
-                        if video_items:
-                            media_url = video_items[0]["url"]
-                            break
-                elif isinstance(data[key], str):
-                    media_url = data[key]
-                    break
-
-        # Fallback to image
-        if not media_url:
-            is_video = False
-            for key in ["image_url", "thumbnail", "thumbnails"]:
-                if key in data:
-                    if key == "thumbnails" and isinstance(data[key], list) and data[key]:
-                        thumbs = sorted(
-                            [t for t in data[key] if "url" in t],
-                            key=lambda x: int(x.get("width", 0)) * int(x.get("height", 0)),
-                            reverse=True
-                        )
-                        if thumbs:
-                            media_url = thumbs[0]["url"]
-                            break
-                    elif isinstance(data[key], str):
-                        media_url = data[key]
-                        break
+        # Check for video first
+        if "video" in data and isinstance(data["video"], str):
+            media_url = data["video"]
+            is_video = True
+        # Fallback to image or thumbnail
+        elif "image" in data and isinstance(data["image"], str):
+            media_url = data["image"]
+        elif "thumbnail" in data and isinstance(data["thumbnail"], str):
+            media_url = data["thumbnail"]
 
         if not media_url:
             await update.message.reply_text("❌ No media found.")
