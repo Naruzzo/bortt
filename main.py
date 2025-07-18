@@ -2,7 +2,7 @@ import logging
 import requests
 import re
 from telegram import Update
-from telegram.ext import Application, MessageHandler, filters, CallbackContext, AIOHTTPWebhookHandler
+from telegram.ext import Application, MessageHandler, filters, CallbackContext
 from aiohttp import web
 
 # Config
@@ -63,13 +63,21 @@ async def handle(update: Update, context: CallbackContext):
         logging.error(e)
         await update.message.reply_text("❌ Error.")
 
+async def webhook_handler(request):
+    data = await request.json()
+    update = Update.de_json(data, bot)
+    await app.update_queue.put(update)
+    return web.Response()
+
 async def main():
+    global app, bot
     app = Application.builder().token(BOT_TOKEN).build()
+    bot = app.bot
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle))
-    await app.bot.set_webhook(url=WEBHOOK_URL)
+    await bot.set_webhook(url=WEBHOOK_URL)
 
     web_app = web.Application()
-    web_app.router.add_post(f"/{BOT_TOKEN}", AIOHTTPWebhookHandler(app))
+    web_app.router.add_post(f"/{BOT_TOKEN}", webhook_handler)
     return web_app
 
 if __name__ == "__main__":
